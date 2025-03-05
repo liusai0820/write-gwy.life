@@ -42,3 +42,9 @@ next-env.d.ts
 
 # 临时文件
 /tmp
+
+# 环境变量
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local

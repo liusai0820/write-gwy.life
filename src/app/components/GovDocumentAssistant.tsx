@@ -9,6 +9,8 @@ import StyleOptions from './StyleOptions';
 import DocumentPreview from './DocumentPreview';
 import FileUploader from './FileUploader';
 import UserProfileSelector from './UserProfileSelector';
+import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx';
+import { saveAs } from 'file-saver';
 
 // 预定义的模型配置
 const MODEL_CONFIG = {
@@ -24,19 +26,19 @@ const PRODUCT_HIGHLIGHTS = {
   },
   
   contextAwareness: {
-    title: "智能匹配20+种使用场景",
+    title: "精准匹配个性化应用场景",
     description: "",
     icon: "🎯"
   },
   
   professionalTerms: {
-    title: "内置政务专业用语库",
+    title: "内置10万+政务语料库",
     description: "",
     icon: "📚"
   },
   
   efficientGeneration: {
-    title: "5秒内完成公文初稿",
+    title: "10秒内完成从构思到成稿",
     description: "",
     icon: "⚡"
   }
@@ -121,8 +123,8 @@ export default function GovDocumentAssistant() {
       <div className="container mx-auto px-4 py-8">
         {/* 标题 */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">智能公文助手</h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">高效辅助公务人员起草规范、专业的公务文件</p>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">办公厅综合处处长</h1>
+          <p className="text-gray-600 max-w-2xl mx-auto">基于先进的大语言模型技术，帮你一键成稿，胜似主任出手</p>
         </div>
 
         {/* 产品亮点展示 */}
@@ -321,7 +323,7 @@ export default function GovDocumentAssistant() {
           
           {/* 右侧预览区域 */}
           <div className="lg:col-span-3">
-            <div className="bg-white shadow-sm rounded-lg border border-gray-200 h-full min-h-[700px] flex flex-col">
+            <div className="bg-white shadow-sm rounded-lg border border-gray-200 h-full flex flex-col">
               <div className="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
                 <h2 className="text-lg font-medium text-gray-800 flex items-center">
                   <svg className="h-5 w-5 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -337,8 +339,27 @@ export default function GovDocumentAssistant() {
                       className="bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 px-3 rounded-md text-sm flex items-center"
                       onClick={() => {
                         navigator.clipboard.writeText(generatedContent);
-                        // 可以添加一个复制成功的提示
+                        // 显示复制成功的提示
+                        const button = document.getElementById('copy-button');
+                        if (button) {
+                          const originalText = button.innerHTML;
+                          button.innerHTML = `
+                            <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            已复制
+                          `;
+                          button.classList.remove('bg-gray-100', 'hover:bg-gray-200');
+                          button.classList.add('bg-green-100', 'text-green-700');
+                          
+                          setTimeout(() => {
+                            button.innerHTML = originalText;
+                            button.classList.remove('bg-green-100', 'text-green-700');
+                            button.classList.add('bg-gray-100', 'hover:bg-gray-200');
+                          }, 2000);
+                        }
                       }}
+                      id="copy-button"
                     >
                       <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -349,7 +370,29 @@ export default function GovDocumentAssistant() {
                     <button
                       className="bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-3 rounded-md text-sm flex items-center"
                       onClick={() => {
-                        // 导出逻辑...
+                        // 获取完整的文档内容
+                        const fullContent = generatedContent;
+                        
+                        // 创建一个新的docx文档
+                        const doc = new Document({
+                          sections: [
+                            {
+                              properties: {},
+                              children: generateDocxContent(fullContent)
+                            }
+                          ]
+                        });
+                        
+                        // 生成并保存文件
+                        Packer.toBlob(doc).then(blob => {
+                          // 使用文档标题作为文件名
+                          const docTitle = extractTitle(fullContent);
+                          const fileName = docTitle 
+                            ? `${docTitle.trim()}.docx`
+                            : '未命名公文.docx';
+                          
+                          saveAs(blob, fileName);
+                        });
                       }}
                     >
                       <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -361,13 +404,15 @@ export default function GovDocumentAssistant() {
                 )}
               </div>
               
-              <div className="flex-grow p-6 overflow-auto">
-                <DocumentPreview 
-                  content={generatedContent}
-                  isLoading={isLoading}
-                  onContentChange={setGeneratedContent}
-                  documentType={selectedDocType}
-                />
+              <div className="flex-1 overflow-auto">
+                <div className="h-full">
+                  <DocumentPreview 
+                    content={generatedContent}
+                    isLoading={isLoading}
+                    onContentChange={setGeneratedContent}
+                    documentType={selectedDocType}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -384,4 +429,357 @@ export default function GovDocumentAssistant() {
       </div>
     </div>
   );
+}
+
+function generateDocxContent(content: string) {
+  const paragraphs: Paragraph[] = [];
+  
+  // 移除Markdown符号并提取内容
+  const cleanLines = content.split('\n').map(line => {
+    // 移除所有Markdown符号
+    if (line.startsWith('# ')) return line.substring(2);
+    if (line.startsWith('## ')) return line.substring(3);
+    if (line.startsWith('### ')) return line.substring(4);
+    if (line.startsWith('- ')) return line.substring(2);
+    return line;
+  }).filter(line => line.trim() !== ''); // 过滤掉空行
+  
+  // 提取标题、正文、落款和联系人信息
+  let title = '';
+  let recipient = '';
+  let sender = '';
+  let date = '';
+  let contactInfo = '';
+  const contentLines: string[] = [];
+  const attachments: string[] = [];
+  
+  // 查找标题（通常是文档开头的非空行）
+  let currentIndex = 0;
+  
+  // 跳过开头的空行
+  while (currentIndex < cleanLines.length && cleanLines[currentIndex].trim() === '') {
+    currentIndex++;
+  }
+  
+  // 提取标题 - 可能跨多行，需要合并
+  const titleLines = [];
+  while (currentIndex < cleanLines.length && 
+         cleanLines[currentIndex].trim() !== '' && 
+         !cleanLines[currentIndex].includes('：') && 
+         !cleanLines[currentIndex].includes(':')) {
+    titleLines.push(cleanLines[currentIndex].trim());
+    currentIndex++;
+  }
+  
+  // 合并标题行
+  if (titleLines.length > 0) {
+    title = titleLines.join('');
+  }
+  
+  // 查找收件人/抬头（通常在标题后的非空行）
+  while (currentIndex < cleanLines.length && cleanLines[currentIndex].trim() === '') {
+    currentIndex++;
+  }
+  
+  // 提取收件人/抬头
+  if (currentIndex < cleanLines.length) {
+    recipient = cleanLines[currentIndex];
+    currentIndex++;
+  }
+  
+  // 提取正文内容
+  const startContent = currentIndex;
+  let endContent = cleanLines.length;
+  
+  // 查找落款（通常在文档末尾）
+  for (let i = cleanLines.length - 1; i >= 0; i--) {
+    const line = cleanLines[i].trim();
+    
+    // 查找日期行（格式如：2023年10月30日）
+    if (/^\d{4}年\d{1,2}月\d{1,2}日$/.test(line)) {
+      date = line;
+      endContent = Math.min(endContent, i);
+    }
+    
+    // 查找发件人/单位名称（通常在日期前）
+    else if (date && i < cleanLines.length - 1 && cleanLines[i+1].trim() === date) {
+      sender = line;
+      endContent = Math.min(endContent, i);
+    }
+    
+    // 查找联系人信息（通常包含"联系人"或电话号码或"联系方式"）
+    else if (/联系人|电话|联系方式|[0-9]{5,}/.test(line)) {
+      contactInfo = line;
+      endContent = Math.min(endContent, i);
+    }
+    
+    // 查找附件信息
+    else if (line.startsWith('附件:') || line.startsWith('附件：')) {
+      let j = i;
+      while (j < cleanLines.length && (cleanLines[j].trim().startsWith('附件') || cleanLines[j].trim().startsWith('    ') || cleanLines[j].trim().startsWith('　　'))) {
+        attachments.unshift(cleanLines[j]);
+        j++;
+      }
+      endContent = Math.min(endContent, i);
+      break;
+    }
+  }
+  
+  // 提取正文
+  for (let i = startContent; i < endContent; i++) {
+    contentLines.push(cleanLines[i]);
+  }
+  
+  // 添加标题
+  if (title) {
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: title,
+            bold: true,
+            size: 32, // 16pt
+            font: {
+              name: "方正小标宋",
+              hint: "eastAsia"
+            }
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: {
+          after: 400,
+          before: 400,
+          line: 360 // 28磅行间距
+        }
+      })
+    );
+  }
+  
+  // 添加收件人/抬头
+  if (recipient) {
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: recipient,
+            size: 24, // 12pt
+            font: {
+              name: "仿宋",
+              hint: "eastAsia"
+            }
+          })
+        ],
+        spacing: {
+          after: 240,
+          before: 240,
+          line: 360 // 28磅行间距
+        }
+      })
+    );
+  }
+  
+  // 处理正文内容
+  contentLines.forEach((line: string) => {
+    if (line.trim() === '') {
+      // 空行 - 不添加额外的段落间距
+      paragraphs.push(new Paragraph({
+        spacing: {
+          line: 360 // 28磅行间距
+        }
+      }));
+    } else if (/^[一二三四五六七八九十]+[、.．]/.test(line.trim())) {
+      // 一级标题（如：一、二、三、等）
+      paragraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: line,
+              bold: true,
+              size: 28,
+              font: {
+                name: "黑体",
+                hint: "eastAsia"
+              }
+            })
+          ],
+          indent: {
+            firstLine: 480
+          },
+          spacing: {
+            line: 360
+          }
+        })
+      );
+    } else if (/^（[一二三四五六七八九十]+）/.test(line.trim())) {
+      // 二级标题（如：（一）（二）等）
+      paragraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: line,
+              size: 26,
+              font: {
+                name: "楷体",
+                hint: "eastAsia"
+              }
+            })
+          ],
+          spacing: {
+            line: 360
+          }
+        })
+      );
+    } else {
+      // 普通段落
+      paragraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: line,
+              size: 24,
+              font: {
+                name: "仿宋",
+                hint: "eastAsia"
+              }
+            })
+          ],
+          indent: {
+            firstLine: 480
+          },
+          spacing: {
+            line: 360
+          }
+        })
+      );
+    }
+  });
+  
+  // 添加附件
+  if (attachments.length > 0) {
+    paragraphs.push(
+      new Paragraph({
+        spacing: {
+          before: 240,
+          line: 360 // 28磅行间距
+        }
+      })
+    );
+    
+    attachments.forEach((attachment: string) => {
+      paragraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: attachment,
+              size: 24, // 12pt
+              font: {
+                name: "仿宋",
+                hint: "eastAsia"
+              }
+            })
+          ],
+          spacing: {
+            line: 360 // 28磅行间距
+          }
+        })
+      );
+    });
+  }
+  
+  // 添加发件人/单位名称
+  if (sender) {
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: sender,
+            size: 24, // 12pt
+            font: {
+              name: "仿宋",
+              hint: "eastAsia"
+            }
+          })
+        ],
+        alignment: AlignmentType.RIGHT,
+        spacing: {
+          before: 240,
+          line: 360 // 28磅行间距
+        }
+      })
+    );
+  }
+  
+  // 添加日期
+  if (date) {
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: date,
+            size: 24, // 12pt
+            font: {
+              name: "仿宋",
+              hint: "eastAsia"
+            }
+          })
+        ],
+        alignment: AlignmentType.RIGHT,
+        spacing: {
+          line: 360 // 28磅行间距
+        }
+      })
+    );
+  }
+  
+  // 添加联系人信息
+  if (contactInfo) {
+    paragraphs.push(
+      new Paragraph({
+        spacing: {
+          before: 240,
+          line: 360 // 28磅行间距
+        }
+      })
+    );
+    
+    paragraphs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: contactInfo,
+            size: 24, // 12pt
+            font: {
+              name: "仿宋",
+              hint: "eastAsia"
+            }
+          })
+        ],
+        spacing: {
+          line: 360 // 28磅行间距
+        }
+      })
+    );
+  }
+  
+  return paragraphs;
+}
+
+// 优化提取标题的函数
+function extractTitle(content: string): string {
+  const lines = content.split('\n');
+  // 跳过开头的空行
+  let currentIndex = 0;
+  while (currentIndex < lines.length && lines[currentIndex].trim() === '') {
+    currentIndex++;
+  }
+  
+  // 提取第一个非空行作为标题
+  if (currentIndex < lines.length) {
+    const title = lines[currentIndex].trim()
+      .replace(/^[#\s]+/, '') // 移除开头的#号和空格
+      .replace(/[:：].*$/, ''); // 移除冒号及其后面的内容
+    return title || '未命名公文';
+  }
+  
+  return '未命名公文';
 }

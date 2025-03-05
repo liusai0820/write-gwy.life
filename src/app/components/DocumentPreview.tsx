@@ -9,6 +9,460 @@ interface DocumentPreviewProps {
   documentType: DocumentType | null;
 }
 
+interface DocumentStructure {
+  title: string;
+  recipients: string[];
+  mainBody: {
+    preface: string[];
+    sections: {
+      title: string;
+      subsections: {
+        title: string;
+        content: string[];
+      }[];
+      content: string[];
+    }[];
+  };
+  ending: {
+    content: string[];
+    sender: string;
+    date: string;
+    attachments: string[];
+    distribution: string[];
+    notes: string[];
+    contact?: string;
+    phone?: string;
+    email?: string;
+  };
+}
+
+interface SectionStructure {
+  title: string;
+  subsections: SubsectionStructure[];
+  content: string[];
+}
+
+interface SubsectionStructure {
+  title: string;
+  content: string[];
+}
+
+interface EndingStructure {
+  content: string[];
+  sender: string;
+  date: string;
+  attachments: string[];
+  distribution: string[];
+  notes: string[];
+  contact?: string;
+  phone?: string;
+  email?: string;
+}
+
+class DocumentParser {
+  private lines: string[];
+  private currentIndex: number = 0;
+
+  constructor(content: string) {
+    this.lines = content.split('\n').map(line => line.trim()).filter(line => line);
+  }
+
+  public parse(): DocumentStructure {
+    const structure: DocumentStructure = {
+      title: '',
+      recipients: [],
+      mainBody: {
+        preface: [],
+        sections: []
+      },
+      ending: {
+        content: [],
+        sender: '',
+        date: '',
+        attachments: [],
+        distribution: [],
+        notes: [],
+        contact: '',
+        phone: '',
+        email: ''
+      }
+    };
+
+    // 解析标题
+    structure.title = this.parseTitle();
+
+    // 解析发文对象
+    structure.recipients = this.parseRecipients();
+
+    // 解析帽段
+    structure.mainBody.preface = this.parsePreface();
+
+    // 解析正文部分
+    while (this.currentIndex < this.lines.length) {
+      const section = this.parseSection();
+      if (section) {
+        structure.mainBody.sections.push(section);
+      } else {
+        break;
+      }
+    }
+
+    // 解析结尾部分
+    structure.ending = this.parseEnding();
+
+    return structure;
+  }
+
+  private parseTitle(): string {
+    const titleLines: string[] = [];
+    while (this.currentIndex < this.lines.length) {
+      const line = this.lines[this.currentIndex];
+      if (this.isRecipient(line) || this.isSectionTitle(line)) break;
+      if (line) {
+        titleLines.push(line);
+      }
+      this.currentIndex++;
+    }
+    return titleLines.join('');
+  }
+
+  private parseRecipients(): string[] {
+    const recipients: string[] = [];
+    while (this.currentIndex < this.lines.length) {
+      const line = this.lines[this.currentIndex];
+      if (this.isRecipient(line)) {
+        recipients.push(line);
+        this.currentIndex++;
+      } else {
+        break;
+      }
+    }
+    return recipients;
+  }
+
+  private parsePreface(): string[] {
+    const preface: string[] = [];
+    while (this.currentIndex < this.lines.length) {
+      const line = this.lines[this.currentIndex];
+      if (this.isSectionTitle(line)) break;
+      preface.push(line);
+      this.currentIndex++;
+    }
+    return preface;
+  }
+
+  private parseSection(): SectionStructure | null {
+    const line = this.lines[this.currentIndex];
+    if (!this.isSectionTitle(line)) return null;
+
+    const section: SectionStructure = {
+      title: line,
+      subsections: [],
+      content: []
+    };
+    this.currentIndex++;
+
+    while (this.currentIndex < this.lines.length) {
+      const currentLine = this.lines[this.currentIndex];
+      if (this.isSectionTitle(currentLine)) break;
+
+      if (this.isSubsectionTitle(currentLine)) {
+        const subsection = this.parseSubsection();
+        section.subsections.push(subsection);
+      } else {
+        section.content.push(currentLine);
+        this.currentIndex++;
+      }
+    }
+
+    return section;
+  }
+
+  private parseSubsection(): SubsectionStructure {
+    const subsection: SubsectionStructure = {
+      title: this.lines[this.currentIndex],
+      content: []
+    };
+    this.currentIndex++;
+
+    while (this.currentIndex < this.lines.length) {
+      const line = this.lines[this.currentIndex];
+      if (this.isSectionTitle(line) || this.isSubsectionTitle(line)) break;
+      subsection.content.push(line);
+      this.currentIndex++;
+    }
+
+    return subsection;
+  }
+
+  private parseEnding(): EndingStructure {
+    const ending: EndingStructure = {
+      content: [],
+      sender: '',
+      date: '',
+      attachments: [],
+      distribution: [],
+      notes: [],
+      contact: '',
+      phone: '',
+      email: ''
+    };
+
+    let hasFoundSpecialEnding = false;
+
+    while (this.currentIndex < this.lines.length) {
+      const line = this.lines[this.currentIndex];
+      
+      // 检查是否是特殊结束语（如"特此通知"）
+      if (line.includes('特此') || line.includes('此致')) {
+        hasFoundSpecialEnding = true;
+        ending.content.push(line);
+      }
+      // 附件部分应该在特殊结束语之后处理
+      else if ((line.startsWith('附件：') || line.startsWith('附件:')) && hasFoundSpecialEnding) {
+        const attachmentContent = line.replace(/^附件[：:]\s*/, '');
+        if (attachmentContent) {
+          ending.attachments.push(attachmentContent);
+        }
+      }
+      // 发文单位和日期应该在最后处理
+      else if (/深圳市.*委员会$/.test(line)) {
+        ending.sender = line;
+      }
+      else if (/^\d{4}年\d{1,2}月\d{1,2}日$/.test(line)) {
+        ending.date = line;
+      }
+      else if (line.includes('联系人：') || line.includes('联系人:')) {
+        ending.contact = line;
+      }
+      else if (line.includes('电话：') || line.includes('电话:')) {
+        ending.phone = line;
+      }
+      else if (line.includes('@') && line.includes('.')) {
+        ending.email = line;
+      }
+      else if (!hasFoundSpecialEnding) {
+        ending.content.push(line);
+      }
+      
+      this.currentIndex++;
+    }
+
+    return ending;
+  }
+
+  private isRecipient(line: string): boolean {
+    return line.endsWith('：') || line.endsWith(':') || 
+           line.includes('各区') || line.includes('各市') || 
+           line.includes('各县') || line.includes('单位：');
+  }
+
+  private isSectionTitle(line: string): boolean {
+    return /^[一二三四五六七八九十]+[、.．]/.test(line);
+  }
+
+  private isSubsectionTitle(line: string): boolean {
+    return /^（[一二三四五六七八九十]+）/.test(line);
+  }
+}
+
+class DocumentRenderer {
+  private structure: DocumentStructure;
+
+  constructor(structure: DocumentStructure) {
+    this.structure = structure;
+  }
+
+  public render(): React.ReactElement[] {
+    return [
+      this.renderTitle(),
+      ...this.renderRecipients(),
+      ...this.renderMainBody(),
+      ...this.renderEnding()
+    ];
+  }
+
+  private renderTitle(): React.ReactElement {
+    return (
+      <div key="title" className="text-center mb-8 mt-6">
+        <h1 className="text-xl font-bold whitespace-pre-wrap mx-auto max-w-full" 
+            style={{ fontFamily: '"方正小标宋", SimSun, serif' }}>
+          {this.structure.title}
+        </h1>
+      </div>
+    );
+  }
+
+  private renderRecipients(): React.ReactElement[] {
+    return this.structure.recipients.map((recipient, index) => (
+      <div key={`recipient-${index}`} className="mb-6">
+        <p className="text-left" style={{ fontFamily: '"仿宋", FangSong, serif' }}>
+          {recipient}
+        </p>
+      </div>
+    ));
+  }
+
+  private renderMainBody(): React.ReactElement[] {
+    const result: React.ReactElement[] = [];
+
+    // 渲染帽段
+    this.structure.mainBody.preface.forEach((paragraph, index) => {
+      result.push(
+        <p key={`preface-${index}`} 
+           className="my-1 text-base leading-relaxed" 
+           style={{ 
+             fontFamily: '"仿宋", FangSong, serif',
+             textIndent: '2em'  // 使用2em确保是2个字符的缩进
+           }}>
+          {paragraph}
+        </p>
+      );
+    });
+
+    // 渲染各节
+    this.structure.mainBody.sections.forEach((section, sectionIndex) => {
+      // 渲染节标题
+      result.push(
+        <h2 key={`section-${sectionIndex}`} 
+            className="text-lg font-bold mt-4 mb-2" 
+            style={{ 
+              fontFamily: '"黑体", SimHei, sans-serif',
+              textIndent: '2em'  // 一级标题缩进2字符
+            }}>
+          {section.title}
+        </h2>
+      );
+
+      // 渲染节内容
+      section.content.forEach((paragraph, paraIndex) => {
+        result.push(
+          <p key={`section-${sectionIndex}-content-${paraIndex}`} 
+             className="my-1 text-base leading-relaxed" 
+             style={{ 
+               fontFamily: '"仿宋", FangSong, serif',
+               textIndent: '2em'
+             }}>
+            {paragraph}
+          </p>
+        );
+      });
+
+      // 渲染小节
+      section.subsections.forEach((subsection, subsectionIndex) => {
+        result.push(
+          <h3 key={`section-${sectionIndex}-subsection-${subsectionIndex}`} 
+              className="text-base font-medium mt-3 mb-2" 
+              style={{ 
+                fontFamily: '"楷体", KaiTi, serif',
+                textIndent: '2em'  // 二级标题缩进2字符
+              }}>
+            {subsection.title}
+          </h3>
+        );
+
+        subsection.content.forEach((paragraph, paraIndex) => {
+          result.push(
+            <p key={`section-${sectionIndex}-subsection-${subsectionIndex}-content-${paraIndex}`} 
+               className="my-1 text-base leading-relaxed" 
+               style={{ 
+                 fontFamily: '"仿宋", FangSong, serif',
+                 textIndent: '2em'
+               }}>
+              {paragraph}
+            </p>
+          );
+        });
+      });
+    });
+
+    return result;
+  }
+
+  private renderEnding(): React.ReactElement[] {
+    const result: React.ReactElement[] = [];
+
+    // 渲染结束语（如"特此通知"）
+    this.structure.ending.content.forEach((paragraph, index) => {
+      result.push(
+        <p key={`ending-${index}`} 
+           className="my-1 text-base leading-relaxed" 
+           style={{ 
+             fontFamily: '"仿宋", FangSong, serif',
+             textIndent: '2em'
+           }}>
+          {paragraph}
+        </p>
+      );
+    });
+
+    // 渲染附件（确保在特此通知之后）
+    if (this.structure.ending.attachments && this.structure.ending.attachments.length > 0) {
+      result.push(
+        <div key="attachments" className="mt-4">
+          <p className="mb-2" style={{ fontFamily: '"仿宋", FangSong, serif' }}>
+            附件：
+          </p>
+          {this.structure.ending.attachments.map((attachment, index) => (
+            <p key={`attachment-${index}`} 
+               className="ml-4" 
+               style={{ fontFamily: '"仿宋", FangSong, serif' }}>
+              {`${index + 1}. ${attachment}`}
+            </p>
+          ))}
+        </div>
+      );
+    }
+
+    // 渲染发文单位和日期（右对齐）
+    const senderDateContainer = (
+      <div key="sender-date" className="mt-8 flex flex-col items-end">
+        {this.structure.ending.sender && (
+          <div className="text-right">
+            <p style={{ fontFamily: '"仿宋", FangSong, serif' }}>
+              {this.structure.ending.sender}
+            </p>
+          </div>
+        )}
+        {this.structure.ending.date && (
+          <div className="text-right mt-2">
+            <p style={{ fontFamily: '"仿宋", FangSong, serif' }}>
+              {this.structure.ending.date}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+    result.push(senderDateContainer);
+
+    // 渲染联系信息
+    if (this.structure.ending.contact || this.structure.ending.phone || this.structure.ending.email) {
+      const contactInfo = (
+        <div key="contact-info" className="mt-4 flex flex-col items-end">
+          {this.structure.ending.contact && (
+            <p style={{ fontFamily: '"仿宋", FangSong, serif' }}>
+              {this.structure.ending.contact}
+            </p>
+          )}
+          {this.structure.ending.phone && (
+            <p style={{ fontFamily: '"仿宋", FangSong, serif' }}>
+              {this.structure.ending.phone}
+            </p>
+          )}
+          {this.structure.ending.email && (
+            <p style={{ fontFamily: '"仿宋", FangSong, serif' }}>
+              {this.structure.ending.email}
+            </p>
+          )}
+        </div>
+      );
+      result.push(contactInfo);
+    }
+
+    return result;
+  }
+}
+
 export default function DocumentPreview({ 
   content, 
   isLoading, 
@@ -17,60 +471,21 @@ export default function DocumentPreview({
 }: DocumentPreviewProps) {
   const [isEditing, setIsEditing] = useState(false);
 
-  // 处理内容变化
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onContentChange(e.target.value);
   };
 
-  // 切换编辑模式
   const toggleEditMode = () => {
     setIsEditing(!isEditing);
   };
 
-  // 格式化文本以显示
-  const formatContent = (text: string) => {
+  const renderDocument = (text: string) => {
     if (!text) return [];
     
-    // 将文本分割成段落
-    return text.split('\n').map((paragraph, index) => {
-      // 检查是否为标题
-      if (paragraph.startsWith('# ')) {
-        return (
-          <h1 key={index} className="text-2xl font-bold mt-6 mb-4">
-            {paragraph.substring(2)}
-          </h1>
-        );
-      } else if (paragraph.startsWith('## ')) {
-        return (
-          <h2 key={index} className="text-xl font-bold mt-5 mb-3">
-            {paragraph.substring(3)}
-          </h2>
-        );
-      } else if (paragraph.startsWith('### ')) {
-        return (
-          <h3 key={index} className="text-lg font-bold mt-4 mb-2">
-            {paragraph.substring(4)}
-          </h3>
-        );
-      } else if (paragraph.startsWith('- ')) {
-        // 列表项
-        return (
-          <li key={index} className="ml-6 list-disc my-1">
-            {paragraph.substring(2)}
-          </li>
-        );
-      } else if (paragraph.trim() === '') {
-        // 空行
-        return <div key={index} className="my-2"></div>;
-      } else {
-        // 普通段落
-        return (
-          <p key={index} className="my-3 text-gray-800 leading-relaxed">
-            {paragraph}
-          </p>
-        );
-      }
-    });
+    const parser = new DocumentParser(text);
+    const structure = parser.parse();
+    const renderer = new DocumentRenderer(structure);
+    return renderer.render();
   };
 
   if (isLoading) {
@@ -95,7 +510,7 @@ export default function DocumentPreview({
         </svg>
         <h3 className="text-lg font-medium mb-2">尚未生成公文</h3>
         <p className="text-sm max-w-md">
-          请在左侧选择公文类型并填写相关信息，然后点击"生成公文草稿"按钮
+          请在左侧选择公文类型并填写相关信息，然后点击&quot;生成公文草稿&quot;按钮
         </p>
         {documentType && (
           <div className="mt-6 text-sm bg-red-50 text-red-700 rounded-md p-3 border border-red-200 max-w-md">
@@ -110,7 +525,7 @@ export default function DocumentPreview({
   return (
     <div className="h-full flex flex-col">
       {/* 编辑/预览切换 */}
-      <div className="mb-4 flex justify-end">
+      <div className="px-6 py-2 flex justify-end">
         <button
           type="button"
           onClick={toggleEditMode}
@@ -139,11 +554,16 @@ export default function DocumentPreview({
         <textarea
           value={content}
           onChange={handleContentChange}
-          className="w-full h-full resize-none border border-gray-200 rounded-md p-4 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 font-mono text-sm"
+          className="flex-1 w-full resize-none border border-gray-200 rounded-md p-4 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 font-mono text-sm"
+          style={{
+            minHeight: '500px'
+          }}
         />
       ) : (
-        <div className="document-preview overflow-auto prose max-w-none">
-          {formatContent(content)}
+        <div className="flex-1 overflow-auto px-6 pb-6">
+          <div className="document-preview prose max-w-none mx-auto bg-white rounded-sm">
+            {renderDocument(content)}
+          </div>
         </div>
       )}
     </div>

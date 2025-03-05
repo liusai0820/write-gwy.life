@@ -1,15 +1,23 @@
 // src/app/api/generate-document/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 // 设置最大执行时间为 60 秒
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    const { prompt, model, temperature } = await req.json();
+    const { prompt, model, temperature, apiKey } = await req.json();
 
     console.log('开始调用OpenRouter API生成文档...');
     console.log('使用的模型:', model);
+
+    // 如果没有提供API密钥，返回模拟响应
+    if (!apiKey && !process.env.OPENROUTER_API_KEY) {
+      console.log('未提供API密钥，返回模拟响应');
+      return NextResponse.json({
+        content: `这是一个模拟响应，因为没有提供API密钥。\n\n请在设置中添加您的OpenRouter API密钥以获取真实的AI生成内容。\n\n您的提示词是：\n${prompt}`
+      });
+    }
 
     // 设置超时时间
     const controller = new AbortController();
@@ -20,12 +28,12 @@ export async function POST(req: Request) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          'Authorization': `Bearer ${apiKey || process.env.OPENROUTER_API_KEY}`,
           'HTTP-Referer': 'https://writing-helper.vercel.app',
           'X-Title': 'Writing Helper'
         },
         body: JSON.stringify({
-          model: model,
+          model: model || 'anthropic/claude-3.5-sonnet',
           messages: [{
             role: "user",
             content: [{
@@ -33,7 +41,7 @@ export async function POST(req: Request) {
               text: prompt
             }]
           }],
-          temperature: temperature,
+          temperature: temperature || 0.7,
         }),
         signal: controller.signal
       });
@@ -61,22 +69,25 @@ export async function POST(req: Request) {
       console.log('成功生成文档');
       return NextResponse.json({ content });
 
-    } catch (fetchError: any) {
+    } catch (fetchError: unknown) {
       clearTimeout(timeoutId);
       console.error('API请求错误:', fetchError);
       
-      if (fetchError.name === 'AbortError') {
-        throw new Error('请求超时，请稍后重试');
-      } else if (fetchError.code === 'ENOTFOUND') {
-        throw new Error('无法连接到API服务器，请检查网络连接');
+      if (fetchError instanceof Error) {
+        if (fetchError.name === 'AbortError') {
+          throw new Error('请求超时，请稍后重试');
+        } else if ('code' in fetchError && fetchError.code === 'ENOTFOUND') {
+          throw new Error('无法连接到API服务器，请检查网络连接');
+        }
       }
       throw fetchError;
     }
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('生成文档时发生错误:', error);
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
     return NextResponse.json(
-      { error: `生成文档失败: ${error.message}` },
+      { error: `生成文档失败: ${errorMessage}` },
       { status: 500 }
     );
   }

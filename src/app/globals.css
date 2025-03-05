@@ -17,3 +17,82 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自定义字体 */
+@font-face {
+  font-family: '方正小标宋';
+  src: url('/fonts/FZXBSJW.TTF') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: '黑体';
+  src: url('/fonts/simhei.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: '楷体';
+  src: url('/fonts/simkai.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: '仿宋';
+  src: url('/fonts/simfang.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* 公文预览样式 */
+.document-content {
+  line-height: 28pt;
+}
+
+.document-content h1 {
+  font-family: '方正小标宋', SimSun, serif;
+  text-align: center;
+  margin-bottom: 2rem;
+  margin-top: 0.5rem;
+  color: #b91c1c;
+}
+
+.document-content h2 {
+  font-family: '黑体', SimHei, sans-serif;
+  font-weight: bold;
+  margin-top: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.document-content h3 {
+  font-family: '楷体', KaiTi, serif;
+  font-weight: 500;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.document-content p {
+  font-family: '仿宋', FangSong, serif;
+  text-indent: 2em;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  color: #1f2937;
+}
+
+.document-content .date {
+  text-align: right;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  padding-right: 1rem;
+}
