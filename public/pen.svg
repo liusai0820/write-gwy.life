@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 笔尖 -->
+  <path d="M8 24L12 28L24 8L20 4L8 24Z" fill="#2563EB"/>
+  <!-- 笔身 -->
+  <path d="M20 4L24 8L28 4L24 0L20 4Z" fill="#1D4ED8"/>
+  <!-- 笔尖细节 -->
+  <path d="M8 24L6 26L10 30L12 28L8 24Z" fill="#1E40AF"/>
+</svg> 
