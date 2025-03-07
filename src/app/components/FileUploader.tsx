@@ -118,9 +118,14 @@ export default function FileUploader({ files, onFilesChange }: FileUploaderProps
         <p className="mt-2 text-sm text-gray-600">
           拖拽文件到此处，或 <span className="text-red-600 font-medium">点击上传</span>
         </p>
-        <p className="mt-1 text-xs text-gray-500">
-          支持 PDF、Word、Excel、PPT 等文档格式
-        </p>
+        <div className="mt-2 space-y-1">
+          <p className="text-xs text-gray-500">
+            可上传政策文件、历史公文、调研报告等参考资料
+          </p>
+          <p className="text-xs text-gray-500">
+            提升生成内容的准确性和专业性
+          </p>
+        </div>
       </div>
 
       {/* 已上传文件列表 */}

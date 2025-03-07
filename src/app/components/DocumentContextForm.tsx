@@ -8,63 +8,61 @@ interface DocumentContextFormProps {
 }
 
 export default function DocumentContextForm({ context, onChange }: DocumentContextFormProps) {
-  const handleChange = (field: keyof DocumentContext, value: string) => {
-    onChange({
-      ...context,
-      [field]: field === 'keywords' ? value.split('、') : value
-    });
-  };
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* 主题 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           主题
         </label>
         <input
           type="text"
           value={context.subject}
-          onChange={(e) => handleChange('subject', e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          placeholder="请输入文档主题"
+          onChange={(e) => onChange({ ...context, subject: e.target.value })}
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-4 py-2.5"
+          placeholder="公文标题应简明扼要，一般用'关于...的...'、'...情况的报告'等形式"
         />
       </div>
 
+      {/* 接收方 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           接收方
         </label>
         <input
           type="text"
           value={context.recipients}
-          onChange={(e) => handleChange('recipients', e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          placeholder="请输入接收方"
+          onChange={(e) => onChange({ ...context, recipients: e.target.value })}
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-4 py-2.5"
+          placeholder="请按照行政级别和部门顺序排列，以逗号分隔，最后以冒号结尾"
         />
       </div>
 
+      {/* 关键词 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          关键词（用、分隔）
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          关键词
         </label>
         <input
           type="text"
           value={context.keywords.join('、')}
-          onChange={(e) => handleChange('keywords', e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          placeholder="请输入关键词，用顿号分隔"
+          onChange={(e) => onChange({ ...context, keywords: e.target.value.split('、').filter(k => k.trim()) })}
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-4 py-2.5"
+          placeholder="请输入3-5个体现文件主要内容的关键词，如：预算、财务、管理"
         />
       </div>
 
+      {/* 特殊要求 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
           特殊要求
         </label>
         <textarea
           value={context.specialRequirements}
-          onChange={(e) => handleChange('specialRequirements', e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-24"
-          placeholder="请输入特殊要求"
+          onChange={(e) => onChange({ ...context, specialRequirements: e.target.value })}
+          rows={4}
+          className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-4 py-2.5"
+          placeholder="请说明文件的具体格式要求（如红头文件、字号等）、重点内容、引用要求、文风要求（如务实、简洁）等"
         />
       </div>
     </div>

@@ -1559,74 +1559,31 @@ export const DOCUMENT_TYPES: DocumentType[] = [
   }
 ];
 
-// 格式化提示词函数
-export function formatPrompt(docType: DocumentType, context: DocumentContext, style: StylePreference): string {
-  // 基础提示语
-  let prompt = docType.templatePrompt;
+// 格式化提示词
+export function formatPrompt(
+  documentType: DocumentType,
+  context: DocumentContext
+): string {
+  return `
+请根据以下信息生成一份${documentType.name}：
 
-  // 添加公文格式规范要求
-  const formatRequirements = `
+1. 文档类型：${documentType.name}
+${documentType.description ? `   说明：${documentType.description}` : ''}
 
-同时，请严格遵循以下政府公文写作规范：
+2. 基本信息：
+   - 主题：${context.subject || '（未提供）'}
+   - 接收方：${context.recipients || '（未提供）'}
+   - 关键词：${context.keywords.join('、') || '（未提供）'}
+   ${context.specialRequirements ? `- 特殊要求：${context.specialRequirements}` : ''}
+   ${context.background ? `- 写作背景：${context.background}` : ''}
 
-1. 内容完整性：
-- 每个部分都应该用规范的段落进行充分展开，不要使用简单的要点列举
-- 详细说明政策背景、具体措施、实施方式和预期效果
-- 对每项政策要点进行详实的论述和必要的解释说明
+3. 写作要求：
+   - 严格遵循公文写作规范
+   - 使用规范的公文用语
+   - 保持严谨、准确的表达
+   - 符合党政机关公文的行文规范
 
-2. 语言规范性：
-- 使用正式的公文语言，采用完整的句式结构
-- 避免使用简略语言或口语化表达
-- 每个观点都要有完整的论述和必要的解释说明
-- 使用规范的政策用语和专业术语
+${documentType.templatePrompt || ''}
 
-3. 格式规范性：
-- 标题使用规范的公文标题格式
-- 正文段落保持首行缩进
-- 各级标题使用规范的层次标号
-- 结构分明，层次清晰
-
-4. 逻辑严谨性：
-- 各部分之间要有合理的过渡和衔接
-- 论述要有充分的依据和说明
-- 政策措施要具有可操作性
-- 结构要完整，首尾呼应
-
-请确保生成的内容符合政府公文的严谨性和规范性要求，避免过于简单或概括性的表述。每个政策点都需要有充分的解释和具体的实施指导。`;
-
-  prompt += formatRequirements;
-
-  // 添加上下文信息
-  if (context.subject) {
-    prompt += `\n\n文件主题：${context.subject}`;
-  }
-  if (context.recipients) {
-    prompt += `\n主送机关：${context.recipients}`;
-  }
-  if (context.keywords && context.keywords.length > 0) {
-    prompt += `\n关键词：${context.keywords.join('、')}`;
-  }
-  if (context.specialRequirements) {
-    prompt += `\n特殊要求：${context.specialRequirements}`;
-  }
-  if (context.background) {
-    prompt += `\n背景信息：${context.background}`;
-  }
-
-  // 添加风格偏好
-  if (style) {
-    prompt += '\n\n风格要求：';
-    prompt += `\n- 正式程度：${style.formalityLevel}级（1-5级）`;
-    if (style.toneStyle) {
-      prompt += `\n- 语言风格：${style.toneStyle}`;
-    }
-    if (style.detailLevel) {
-      prompt += `\n- 详细程度：${style.detailLevel}级（1-5级）`;
-    }
-    if (style.structurePreference) {
-      prompt += `\n- 结构偏好：${style.structurePreference}`;
-    }
-  }
-
-  return prompt;
+请生成完整的文档内容。`;
 }
