@@ -1,13 +1,25 @@
-# 写作助手
+# 智能公文助手
 
-一个基于AI的写作辅助工具，帮助用户生成高质量的文本内容。
+专为公务人员提供的高效公文写作服务平台。
 
 ## 功能特点
 
-- 基于提示词生成文本内容
-- 支持关键词引导
-- 使用OpenRouter API调用多种AI模型
-- 支持导出为Markdown格式
+- 覆盖32+种标准公文格式
+- 精准匹配个性化应用场景
+- 内置10万+政务语料库
+- 10秒内完成从构思到成稿
+- 支持一键导出Word文档
+- 智能反馈系统
+- 自适应身份设置
+- 参考资料上传功能
+
+## 技术栈
+
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- OpenRouter API
+- Resend Email Service
 
 ## 环境要求
 
@@ -31,15 +43,25 @@ yarn install
 
 3. 配置环境变量
    - 复制 `.env.example` 文件为 `.env.local`
-   - 在 `.env.local` 文件中填入您的 OpenRouter API 密钥
+   - 配置必要的环境变量
 
 ```bash
 cp .env.example .env.local
 ```
 
-然后编辑 `.env.local` 文件，填入您的 API 密钥：
+在 `.env.local` 文件中配置以下环境变量：
 ```
-OPENROUTER_API_KEY="sk-or-your-actual-api-key"
+# OpenRouter API密钥
+OPENROUTER_API_KEY="your-api-key"
+
+# Email配置 (使用Resend邮件服务)
+RESEND_API_KEY="your-resend-api-key"
+NOTIFICATION_EMAIL="your-email@example.com"
+
+# GitHub配置（可选）
+GITHUB_ACCESS_TOKEN="your-github-token"
+GITHUB_REPO_OWNER="your-github-username"
+GITHUB_REPO_NAME="your-repo-name"
 ```
 
 ## 运行项目
@@ -60,29 +82,41 @@ yarn build
 yarn start
 ```
 
-## 使用方法
+## 主要功能
 
-1. 访问 http://localhost:3000
-2. 在提示词文本框中输入您的写作需求
-3. 可选：添加关键词以引导生成内容
-4. 点击"生成内容"按钮
-5. 生成完成后，可以查看结果并选择导出为Markdown文件
+### 1. 公文类型支持
+- 支持多种标准公文格式
+- 智能模板匹配
+- 自动格式调整
 
-## API密钥设置
+### 2. 智能写作
+- 基于上下文的智能补全
+- 政务专业用语建议
+- 实时写作指导
 
-您可以通过以下两种方式提供API密钥：
+### 3. 文档导出
+- 一键导出Word文档
+- 自动排版
+- 标准格式化
 
-1. 在环境变量中设置 `OPENROUTER_API_KEY`（推荐用于生产环境）
-2. 在应用界面的API设置中直接输入（方便开发和测试）
+### 4. 用户反馈系统
+- 实时反馈收集
+- 邮件通知集成
+- 用户体验追踪
 
-如果没有提供API密钥，应用将返回模拟响应。
+## API配置说明
 
-## 获取OpenRouter API密钥
-
+### OpenRouter API
+用于AI模型调用，支持多种大语言模型：
 1. 访问 [OpenRouter](https://openrouter.ai/keys)
-2. 注册或登录账号
-3. 创建新的API密钥
-4. 复制API密钥并按上述方法配置
+2. 注册并创建API密钥
+3. 在环境变量中配置
+
+### Resend Email Service
+用于发送反馈通知邮件：
+1. 访问 [Resend](https://resend.com)
+2. 注册并获取API密钥
+3. 在环境变量中配置
 
 ## 许可证
 

@@ -76,6 +76,9 @@ export default function GovDocumentAssistant() {
   // 设置对话框状态
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
 
+  // 用户背景信息状态
+  const [selectedBackground, setSelectedBackground] = useState('');
+
   // 检查是否是首次访问
   useEffect(() => {
     const hasVisited = localStorage.getItem('hasVisitedBefore');
@@ -147,19 +150,19 @@ export default function GovDocumentAssistant() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="container mx-auto px-4 py-6">
         {/* 顶部导航栏 */}
         <div className="flex justify-between items-center mb-6">
           <div className="text-center flex-1">
-            <h1 className="text-2xl font-bold text-gray-800 mb-1">办公厅综合处处长</h1>
-            <p className="text-sm text-gray-600 max-w-2xl mx-auto">基于先进的大语言模型技术，帮你一键成稿，胜似主任出手</p>
+            <h1 className="text-4xl font-bold text-gray-800 mb-4">公文写作助手</h1>
+            <p className="text-sm text-gray-600 max-w-2xl mx-auto">基于最先进的大语言模型，帮你一键成稿，胜似主任出手</p>
           </div>
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center px-3 py-1.5 text-sm text-gray-700 bg-white rounded-lg border border-gray-200 hover:bg-gray-50"
+            className="flex items-center px-4 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-colors duration-200"
           >
-            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -170,9 +173,13 @@ export default function GovDocumentAssistant() {
         {/* 产品亮点展示 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto mb-8">
           {Object.values(PRODUCT_HIGHLIGHTS).map((highlight, index) => (
-            <div key={index} className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow flex items-center">
-              <div className="text-xl mr-2">{highlight.icon}</div>
-              <div className="text-sm font-medium text-gray-800">{highlight.title}</div>
+            <div key={index} className="bg-white rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-center">
+                <span className="text-xl mr-2">{highlight.icon}</span>
+                <span className="text-xs text-gray-800">
+                  {highlight.title}
+                </span>
+              </div>
             </div>
           ))}
         </div>
@@ -183,7 +190,7 @@ export default function GovDocumentAssistant() {
           <div className="lg:col-span-2 space-y-4">
             {/* 文档类型选择 */}
             <div className="bg-white shadow-sm rounded-lg p-4 border border-gray-200">
-              <h2 className="text-base font-medium mb-3 text-gray-800 flex items-center">
+              <h2 className="text-base text-gray-800 mb-3 flex items-center">
                 <svg className="h-4 w-4 mr-1.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
@@ -359,14 +366,41 @@ export default function GovDocumentAssistant() {
         </div>
       </div>
 
-      {/* 底部版权信息 */}
-      <div className="border-t border-gray-200 mt-12">
-        <div className="container mx-auto px-4 py-4">
-          <div className="text-center text-gray-500 text-xs">
-            © 2025 智能公文助手 · 专为公务人员提供高效公文写作服务
+      {/* 设置对话框 */}
+      {isSettingsOpen && (
+        <div className="fixed top-20 right-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-[480px] border border-gray-200">
+            <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-900">身份设置</h3>
+              <button
+                onClick={() => setIsSettingsOpen(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="px-4 py-4">
+              <p className="text-sm text-gray-500 mb-4">
+                设置您的职务身份，以获得更精准的写作建议
+              </p>
+              <UserProfileSelector
+                selectedBackground={selectedBackground}
+                onBackgroundChange={setSelectedBackground}
+                onProfileSelect={(profile) => {
+                  setSelectedBackground(profile.backgroundInfo);
+                  setDocumentContext(prev => ({
+                    ...prev,
+                    background: profile.backgroundInfo
+                  }));
+                }}
+                onSave={() => setIsSettingsOpen(false)}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -49,9 +49,15 @@ interface UserProfileSelectorProps {
   onProfileSelect: (profile: UserProfile) => void;
   selectedBackground: string;
   onBackgroundChange: (background: string) => void;
+  onSave?: () => void;
 }
 
-export default function UserProfileSelector({ onProfileSelect, selectedBackground, onBackgroundChange }: UserProfileSelectorProps) {
+export default function UserProfileSelector({ 
+  onProfileSelect, 
+  selectedBackground, 
+  onBackgroundChange,
+  onSave 
+}: UserProfileSelectorProps) {
   const [editedBackground, setEditedBackground] = useState(selectedBackground);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -71,7 +77,12 @@ export default function UserProfileSelector({ onProfileSelect, selectedBackgroun
       // 这里可以添加后端保存逻辑
       onBackgroundChange(editedBackground);
       setSaveMessage('保存成功');
-      setTimeout(() => setSaveMessage(''), 3000);
+      // 调用 onSave 回调
+      if (onSave) {
+        setTimeout(() => {
+          onSave();
+        }, 500); // 延迟500ms后关闭，让用户看到保存成功的提示
+      }
     } catch (error) {
       setSaveMessage('保存失败，请重试');
     } finally {

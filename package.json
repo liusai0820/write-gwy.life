@@ -20,6 +20,7 @@
     "react-dom": "^19.0.0",
     "react-markdown": "^10.0.1",
     "remark-gfm": "^4.0.1",
+    "resend": "^4.1.2",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

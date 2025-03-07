@@ -1,20 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-
-// 使用系统字体替代
-const systemFont = {
-  className: 'system-font',
-  style: { 
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"'
-  }
-};
-
-const systemMonoFont = {
-  className: 'system-mono-font',
-  style: {
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace'
-  }
-};
+import FeedbackButton from "./components/FeedbackButton";
 
 export const metadata: Metadata = {
   title: "智能公文助手",
@@ -31,10 +17,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body style={{
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
+      <body className="min-h-screen bg-gray-50" style={{
+        fontFamily: 'KaiTi, 楷体, STKaiti, 华文楷体, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
       }}>
-        {children}
+        <div className="flex flex-col min-h-screen">
+          <div className="flex-grow">
+            {children}
+          </div>
+          <footer>
+            <div className="container mx-auto px-4 py-4">
+              <div className="text-center text-gray-500 text-xs flex items-center justify-center gap-4">
+                <span>© 2025 智能公文助手 · 专为公务人员提供高效公文写作服务</span>
+                <FeedbackButton />
+              </div>
+            </div>
+          </footer>
+        </div>
       </body>
     </html>
   )

@@ -34,7 +34,7 @@ export default function DocumentTypeSelector({
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={`
-              px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-200
+              px-2.5 py-1 text-xs transition-colors duration-200
               ${activeTab === tab.id
                 ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-700 ring-opacity-50'
                 : 'text-gray-600 hover:bg-gray-100'
@@ -47,29 +47,32 @@ export default function DocumentTypeSelector({
       </div>
 
       {/* 文档类型网格 */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {filteredTypes.map((type) => (
           <button
             key={type.id}
             onClick={() => onSelect(type)}
             className={`
-              p-3 rounded-md border text-center transition duration-200 flex flex-col items-center 
+              p-2 rounded-md border text-center transition duration-200 flex items-center justify-center space-x-1.5
               ${selectedType?.id === type.id 
-                ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-500 ring-opacity-50' 
+                ? 'border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500 ring-opacity-50' 
                 : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
               }
             `}
           >
-            <span className="text-2xl mb-2">{type.icon}</span>
-            <span className="font-medium text-sm">{type.name}</span>
+            <span className="text-lg">{type.icon}</span>
+            <span className="text-xs">{type.name}</span>
           </button>
         ))}
       </div>
 
       {selectedType && (
-        <div className="mt-4 p-4 bg-blue-50 rounded-md border border-blue-200">
-          <h3 className="font-medium text-blue-800 mb-1">{selectedType.name}</h3>
-          <p className="text-sm text-gray-600">{selectedType.description}</p>
+        <div className="mt-3 p-3 bg-blue-50 rounded-md border border-blue-200">
+          <div className="flex items-center text-xs">
+            <span className="text-blue-800">{selectedType.name}</span>
+            <span className="text-blue-800 mx-1">：</span>
+            <span className="text-gray-600">{selectedType.description}</span>
+          </div>
         </div>
       )}
     </div>
