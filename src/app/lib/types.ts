@@ -224,7 +224,7 @@ export const DOCUMENT_TYPES: DocumentType[] = [
     id: 'decision',
     name: '决定',
     icon: '⚖️',
-    description: '对重要事项或重大行动作出安排，对已明确并需要遵循的规则、定论作出明确表述的法定公文',
+    description: '对重要事项或重大行动作出安排，对已明确并需遵循的规则、定论作出明确表述的法定公文',
     templatePrompt: `请根据提供的信息撰写一份规范的决定。
 
 一、标题要求
@@ -1807,39 +1807,39 @@ export const DOCUMENT_TYPES: DocumentType[] = [
 
 // 格式化提示词
 export function formatPrompt(
-   documentType: DocumentType,
-   context: DocumentContext
- ): string {
-   // 获取公文类别描述
-   const getCategoryDescription = (category: string): string => {
-     switch(category) {
-       case 'standard': return '标准公文';
-       case 'professional': return '专业文书';
-       case 'speech': return '讲话稿件';
-       case 'official': return '规章制度';
-       default: return '公文';
-     }
-   };
-   
-   // 公文基本框架设置
-   const basePrompt = `
- 你是一位有30年党政机关文秘工作经验的资深公文写作专家，曾在各级机关担任过核心文秘工作，参与起草过上千份重要公文，对各类公文的语言风格、结构特点和写作技巧有深入研究。你精通公文写作规范，擅长使用准确、规范的公文用语，确保文章逻辑严密、层次清晰、表述精准。
- 
- 我需要你以资深公文写作专家的身份，为我撰写一份高质量的${documentType.name}。这份${documentType.name}属于${getCategoryDescription(documentType.category)}类文件，${documentType.description || ''}。
- 
- 【文件基本信息】
- - 文档主题：${context.subject || '（需在文内根据内容确定合适主题）'}
- - 接收对象：${context.recipients || '（视文件类型确定适当的接收方）'}
- - 关键内容要点：${context.keywords.join('、') || '（根据文件内容确定关键要点）'}
- ${context.specialRequirements ? `- 特殊要求：${context.specialRequirements}` : ''}
- ${context.background ? `- 写作背景与上下文：${context.background}` : ''}
- 
- 【写作风格与语言要求】
- 1. 语言风格：严谨规范，用词精准，句式完整，逻辑清晰
- 2. 公文特色：使用规范的公文表述方式和专业术语，如"研究决定""认真贯彻""切实加强""扎实推进"等
- 3. 文风特点：客观公正，实事求是，不夸大成绩，不回避问题
- 4. 结构要求：层次分明，条理清晰，重点突出，衔接自然
- 
+  documentType: DocumentType,
+  context: DocumentContext
+): string {
+  // 获取公文类别描述
+  const getCategoryDescription = (category: string): string => {
+    switch(category) {
+      case 'standard': return '标准公文';
+      case 'professional': return '专业文书';
+      case 'speech': return '讲话稿件';
+      case 'official': return '规章制度';
+      default: return '公文';
+    }
+  };
+  
+  // 公文基本框架设置
+  const basePrompt = `
+你是一位有30年党政机关文秘工作经验的资深公文写作专家，曾在各级机关担任过核心文秘工作，参与起草过上千份重要公文，对各类公文的语言风格、结构特点和写作技巧有深入研究。你精通公文写作规范，擅长使用准确、规范的公文用语，确保文章逻辑严密、层次清晰、表述精准。
+
+我需要你以资深公文写作专家的身份，为我撰写一份高质量的${documentType.name}。这份${documentType.name}属于${getCategoryDescription(documentType.category)}类文件，${documentType.description || ''}。
+
+【文件基本信息】
+- 文档主题：${context.subject || '（需在文内根据内容确定合适主题）'}
+- 接收对象：${context.recipients || '（视文件类型确定适当的接收方）'}
+- 关键内容要点：${context.keywords.join('、') || '（根据文件内容确定关键要点）'}
+${context.specialRequirements ? `- 特殊要求：${context.specialRequirements}` : ''}
+${context.background ? `- 写作背景与上下文：${context.background}` : ''}
+
+【写作风格与语言要求】
+1. 语言风格：严谨规范，用词精准，句式完整，逻辑清晰
+2. 公文特色：使用规范的公文表述方式和专业术语，如"研究决定""认真贯彻""切实加强""扎实推进"等
+3. 文风特点：客观公正，实事求是，不夸大成绩，不回避问题
+4. 结构要求：层次分明，条理清晰，重点突出，衔接自然
+
 【格式排版严格要求】
 1. 严禁使用bulletpoint(•)、星号(*)、破折号(-)等非标准公文符号作为列表标记
 2. 不得使用简短的点式概要方式呈现内容，应使用完整的段落和句子
@@ -1852,32 +1852,39 @@ export function formatPrompt(
 5. 分条列述内容时也要使用完整句子，而非简短词组
 6. 标题应居中排布，正文应规范缩进
 
- 【注意事项】
- - 严格按照国家公文写作规范和标准格式编写
- - 确保文档格式规范，段落层次清晰
- - 公文标题一般不使用标点符号，居中排布
- - 使用准确的公文术语和表达方式
- - 确保文风庄重得体，语言精炼
- - 避免口语化、网络用语和不规范表达
- `;
- 
-   // 根据文档类型添加特定指导
-   const enhancedTemplatePrompt = documentType.templatePrompt ? 
-     `${documentType.templatePrompt}
- 
- 【高级写作指导】
- 请在写作过程中特别注意以下要点，使公文更加专业、规范和有说服力：
- 1. 确保开头段落言简意赅，直奔主题，避免冗长铺垫
- 2. 主体部分分层清晰，使用规范的序号标识层级关系
- 3. 数据部分做到精确具体，避免模糊表述，必要时注明数据来源
- 4. 关键观点部分重点突出，语言凝练有力
- 5. 结尾部分简明扼要，点明要求或期望
- 6. 整体语言保持专业性和权威性，避免口语化表达
- 7. 根据文件重要程度调整用语庄重程度，确保行文得体
- 
- 现在，请以资深公文专家的专业水准，基于上述信息和要求，撰写一份完整、规范、高质量的${documentType.name}。请生成完整文档内容，确保符合公文规范和实际应用需求。` : 
-     `请根据以上要求，以资深公文写作专家的专业水准，撰写一份完整、规范、高质量的${documentType.name}。生成的内容应当符合公文写作的正式规范，并确保内容与提供的主题、接收方和关键词等信息保持一致。`;
- 
-   // 合并提示词
-   return basePrompt + enhancedTemplatePrompt;
- }
+【注意事项】
+- 严格按照国家公文写作规范和标准格式编写
+- 确保文档格式规范，段落层次清晰
+- 公文标题一般不使用标点符号，居中排布
+- 使用准确的公文术语和表达方式
+- 确保文风庄重得体，语言精炼
+- 避免口语化、网络用语和不规范表达
+`;
+
+  // 根据文档类型添加特定指导
+  const enhancedTemplatePrompt = documentType.templatePrompt ? 
+    `${documentType.templatePrompt}
+
+【高级写作指导】
+请在写作过程中特别注意以下要点，使公文更加专业、规范和有说服力：
+1. 确保开头段落言简意赅，直奔主题，避免冗长铺垫
+2. 主体部分分层清晰，使用规范的序号标识层级关系
+3. 数据部分做到精确具体，避免模糊表述，必要时注明数据来源
+4. 关键观点部分重点突出，语言凝练有力
+5. 结尾部分简明扼要，点明要求或期望
+6. 整体语言保持专业性和权威性，避免口语化表达
+7. 根据文件重要程度调整用语庄重程度，确保行文得体
+
+现在，请以资深公文专家的专业水准，基于上述信息和要求，撰写一份完整、规范、高质量的${documentType.name}。请生成完整文档内容，确保符合公文规范和实际应用需求。` : 
+    `请根据以上要求，以资深公文写作专家的专业水准，撰写一份完整、规范、高质量的${documentType.name}。生成的内容应当符合公文写作的正式规范，并确保内容与提供的主题、接收方和关键词等信息保持一致。`;
+
+  // 合并提示词
+  return basePrompt + enhancedTemplatePrompt;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  subName: string;
+  backgroundInfo: string;
+}

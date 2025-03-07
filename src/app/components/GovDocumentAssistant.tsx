@@ -155,7 +155,7 @@ export default function GovDocumentAssistant() {
         {/* 顶部导航栏 */}
         <div className="flex justify-between items-center mb-6">
           <div className="text-center flex-1">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">公文写作助手</h1>
+            <h1 className="text-4xl font-bold text-gray-800 mb-4">公文笔杆子</h1>
             <p className="text-sm text-gray-600 max-w-2xl mx-auto">基于最先进的大语言模型，帮你一键成稿，胜似主任出手</p>
           </div>
           <button
@@ -387,12 +387,11 @@ export default function GovDocumentAssistant() {
               </p>
               <UserProfileSelector
                 selectedBackground={selectedBackground}
-                onBackgroundChange={setSelectedBackground}
-                onProfileSelect={(profile) => {
-                  setSelectedBackground(profile.backgroundInfo);
+                onBackgroundChange={(backgroundInfo) => {
+                  setSelectedBackground(backgroundInfo);
                   setDocumentContext(prev => ({
                     ...prev,
-                    background: profile.backgroundInfo
+                    background: backgroundInfo
                   }));
                 }}
                 onSave={() => setIsSettingsOpen(false)}

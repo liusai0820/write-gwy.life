@@ -312,8 +312,8 @@ class DocumentRenderer {
         <p key={`preface-${index}`} 
            className="my-1 text-base leading-relaxed" 
            style={{ 
-             fontFamily: '"仿宋", FangSong, serif',
-             textIndent: '2em'  // 使用2em确保是2个字符的缩进
+             fontFamily: '"仿宋", FangSong, "SimSun", "宋体", serif',
+             textIndent: '2em'
            }}>
           {paragraph}
         </p>
@@ -327,8 +327,8 @@ class DocumentRenderer {
         <h2 key={`section-${sectionIndex}`} 
             className="text-lg font-bold mt-4 mb-2" 
             style={{ 
-              fontFamily: '"黑体", SimHei, sans-serif',
-              textIndent: '2em'  // 一级标题缩进2字符
+              fontFamily: '"黑体", "SimHei", "Microsoft YaHei", "微软雅黑", sans-serif',
+              textIndent: '2em'
             }}>
           {section.title}
         </h2>
@@ -470,6 +470,7 @@ export default function DocumentPreview({
   documentType 
 }: DocumentPreviewProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [renderError, setRenderError] = useState<string | null>(null);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onContentChange(e.target.value);
@@ -482,10 +483,21 @@ export default function DocumentPreview({
   const renderDocument = (text: string) => {
     if (!text) return [];
     
-    const parser = new DocumentParser(text);
-    const structure = parser.parse();
-    const renderer = new DocumentRenderer(structure);
-    return renderer.render();
+    try {
+      const parser = new DocumentParser(text);
+      const structure = parser.parse();
+      const renderer = new DocumentRenderer(structure);
+      return renderer.render();
+    } catch (error) {
+      console.error('文档渲染错误:', error);
+      setRenderError('文档渲染出现问题，已切换到基础显示模式');
+      // 降级渲染方案
+      return text.split('\n').map((line, index) => (
+        <p key={index} className="my-1 text-base leading-relaxed" style={{textIndent: '2em'}}>
+          {line}
+        </p>
+      ));
+    }
   };
 
   if (isLoading) {
@@ -561,6 +573,11 @@ export default function DocumentPreview({
         />
       ) : (
         <div className="flex-1 overflow-auto px-6 pb-6">
+          {renderError && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-700 text-sm">
+              {renderError}
+            </div>
+          )}
           <div className="document-preview prose max-w-none mx-auto bg-white rounded-sm">
             {renderDocument(content)}
           </div>

@@ -2,13 +2,12 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import type { UserProfile } from '../lib/types';
 
-// 用户背景资料类型
-export interface UserProfile {
-  id: string;
-  name: string;
-  subName: string;
-  backgroundInfo: string;
+interface UserProfileSelectorProps {
+  selectedBackground: string;
+  onBackgroundChange: (background: string) => void;
+  onSave?: () => void;
 }
 
 // 默认预设的用户背景资料
@@ -45,15 +44,7 @@ const DEFAULT_PROFILES: UserProfile[] = [
   }
 ];
 
-interface UserProfileSelectorProps {
-  onProfileSelect: (profile: UserProfile) => void;
-  selectedBackground: string;
-  onBackgroundChange: (background: string) => void;
-  onSave?: () => void;
-}
-
 export default function UserProfileSelector({ 
-  onProfileSelect, 
   selectedBackground, 
   onBackgroundChange,
   onSave 
@@ -68,22 +59,19 @@ export default function UserProfileSelector({
 
   const handleProfileSelect = (profile: UserProfile) => {
     setEditedBackground(profile.backgroundInfo);
+    onBackgroundChange(profile.backgroundInfo);
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     setSaveMessage('');
     try {
-      // 这里可以添加后端保存逻辑
       onBackgroundChange(editedBackground);
       setSaveMessage('保存成功');
-      // 调用 onSave 回调
       if (onSave) {
-        setTimeout(() => {
-          onSave();
-        }, 500); // 延迟500ms后关闭，让用户看到保存成功的提示
+        setTimeout(onSave, 500);
       }
-    } catch (error) {
+    } catch {
       setSaveMessage('保存失败，请重试');
     } finally {
       setIsSaving(false);

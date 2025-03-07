@@ -96,3 +96,10 @@ body {
   margin-bottom: 1rem;
   padding-right: 1rem;
 }
+
+/* 自定义样式 */
+@layer components {
+  .document-preview {
+    @apply p-8;
+  }
+}

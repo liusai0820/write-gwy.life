@@ -3,7 +3,7 @@ import "./globals.css";
 import FeedbackButton from "./components/FeedbackButton";
 
 export const metadata: Metadata = {
-  title: "智能公文助手",
+  title: "公文笔杆子",
   description: "专业的公务写作辅助工具",
   icons: {
     icon: '/pen.svg'
@@ -27,7 +27,7 @@ export default function RootLayout({
           <footer>
             <div className="container mx-auto px-4 py-4">
               <div className="text-center text-gray-500 text-xs flex items-center justify-center gap-4">
-                <span>© 2025 智能公文助手 · 专为公务人员提供高效公文写作服务</span>
+                <span>© 2025 公文笔杆子 · 专为公务人员提供高效公文写作服务</span>
                 <FeedbackButton />
               </div>
             </div>
