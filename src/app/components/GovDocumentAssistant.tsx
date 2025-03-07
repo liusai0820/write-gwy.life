@@ -1,7 +1,7 @@
 // src/app/components/GovDocumentAssistant.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DocumentType, DocumentContext, StylePreference, formatPrompt } from '../lib/types';
 import DocumentTypeSelector from './DocumentTypeSelector';
 import DocumentContextForm from './DocumentContextForm';
@@ -11,9 +11,10 @@ import FileUploader from './FileUploader';
 import UserProfileSelector from './UserProfileSelector';
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+import { getServerConfig } from '../lib/api';
 
 // 预定义的模型配置
-const MODEL_CONFIG = {
+const DEFAULT_MODEL_CONFIG = {
   model: "anthropic/claude-3.5-sonnet",
   temperature: 0.6,
 };
@@ -66,6 +67,9 @@ export default function GovDocumentAssistant() {
     structurePreference: '标准结构'
   });
   
+  // 模型配置
+  const [modelConfig, setModelConfig] = useState(DEFAULT_MODEL_CONFIG);
+  
   // 生成的内容
   const [generatedContent, setGeneratedContent] = useState<string>('');
   
@@ -77,6 +81,27 @@ export default function GovDocumentAssistant() {
 
   // 当前选择的功能标签
   const [activeTab, setActiveTab] = useState<string>('standard');
+
+  // 获取服务器配置
+  useEffect(() => {
+    async function fetchServerConfig() {
+      try {
+        const config = await getServerConfig();
+        if (config.defaultModel) {
+          setModelConfig(prev => ({
+            ...prev,
+            model: config.defaultModel
+          }));
+          console.log('从服务器获取的默认模型:', config.defaultModel);
+        }
+      } catch (err) {
+        console.error('获取服务器配置失败:', err);
+        // 使用默认配置，不显示错误
+      }
+    }
+    
+    fetchServerConfig();
+  }, []);
 
   // 处理文档生成请求
   const handleGenerateDocument = async () => {
@@ -100,8 +125,8 @@ export default function GovDocumentAssistant() {
         },
         body: JSON.stringify({
           prompt,
-          model: MODEL_CONFIG.model,
-          temperature: MODEL_CONFIG.temperature
+          model: modelConfig.model,
+          temperature: modelConfig.temperature
         })
       });
       

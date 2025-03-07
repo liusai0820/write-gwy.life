@@ -8,8 +8,11 @@ export async function POST(req: Request) {
   try {
     const { prompt, model, temperature, apiKey } = await req.json();
 
+    // 从环境变量获取默认模型，如果未设置则使用claude-3.5-sonnet
+    const defaultModel = process.env.DEFAULT_MODEL || 'anthropic/claude-3.5-sonnet';
+    
     console.log('开始调用OpenRouter API生成文档...');
-    console.log('使用的模型:', model);
+    console.log('使用的模型:', model || defaultModel);
 
     // 如果没有提供API密钥，返回模拟响应
     if (!apiKey && !process.env.OPENROUTER_API_KEY) {
@@ -33,7 +36,7 @@ export async function POST(req: Request) {
           'X-Title': 'Writing Helper'
         },
         body: JSON.stringify({
-          model: model || 'anthropic/claude-3.5-sonnet',
+          model: model || defaultModel,
           messages: [{
             role: "user",
             content: [{

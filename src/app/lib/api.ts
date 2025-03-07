@@ -1,5 +1,28 @@
 import { WritingRequest, ApiResponse } from './types';
 
+// 添加获取服务器配置的接口
+export interface ServerConfig {
+  defaultModel: string;
+  error?: string;
+}
+
+// 获取服务器配置
+export async function getServerConfig(): Promise<ServerConfig> {
+  try {
+    const response = await fetch('/api/config');
+    if (!response.ok) {
+      throw new Error(`获取配置失败: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('获取服务器配置时发生错误:', error);
+    return {
+      defaultModel: 'anthropic/claude-3.5-sonnet', // 默认回退值
+      error: error instanceof Error ? error.message : '未知错误'
+    };
+  }
+}
+
 export async function generateContent(request: WritingRequest): Promise<ApiResponse> {
   try {
     // 使用OpenRouter作为默认API提供商
