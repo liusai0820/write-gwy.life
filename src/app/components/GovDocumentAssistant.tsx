@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { DocumentType, DocumentContext, formatPrompt } from '../lib/types';
+import { DocumentType, DocumentContext } from '../lib/types';
 import DocumentTypeSelector from './DocumentTypeSelector';
 import DocumentContextForm from './DocumentContextForm';
 import DocumentPreview from './DocumentPreview';
@@ -11,11 +11,24 @@ import UserProfileSelector from './UserProfileSelector';
 import { Document, Packer, Paragraph, TextRun, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 import { getServerConfig } from '../lib/api';
+import * as mammoth from 'mammoth';
+// import * as pdfjsLib from 'pdfjs-dist'; // <-- 移除静态导入
+import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 
-// 预定义的模型配置
+// 设置 pdfjs workerSrc
+let pdfjsLibInstance: typeof import('pdfjs-dist') | null = null;
+if (typeof window !== 'undefined') {
+  // 动态加载 pdfjs 库本身，只在客户端执行
+  import('pdfjs-dist').then(lib => {
+    pdfjsLibInstance = lib;
+    pdfjsLibInstance.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLibInstance.version}/pdf.worker.min.js`;
+  });
+}
+
+// 预定义的模型配置 - 从环境变量读取
 const DEFAULT_MODEL_CONFIG = {
-  model: "anthropic/claude-3.5-sonnet",
-  temperature: 0.6,
+  model: process.env.NEXT_PUBLIC_DEFAULT_MODEL_NAME || "gemini-1.5-pro-latest", // 提供备用值
+  temperature: parseFloat(process.env.NEXT_PUBLIC_DEFAULT_MODEL_TEMPERATURE || "0.6"), // 解析为数字，提供备用值
 };
 
 const PRODUCT_HIGHLIGHTS = {
@@ -44,18 +57,30 @@ const PRODUCT_HIGHLIGHTS = {
   }
 };
 
+// 将示例字符串定义为常量
+const EXAMPLE_PLACEHOLDER = `例如，撰写工作报告：
+请帮我撰写一份关于【XX部门】【2024年上半年】的工作报告。
+主要内容包括：
+1. 工作回顾：简述上半年主要工作，如完成了【项目A】和【项目B】。
+2. 主要成绩：【指标1】完成【具体数据】，同比增长【百分比】；【指标2】达到【具体数据】。
+3. 存在问题：【问题1】、【问题2】。
+4. 下半年计划：重点推进【计划A】，目标是【具体目标】。
+
+特殊要求：文风务实，突出数据，篇幅控制在2500字左右。`;
+
 export default function GovDocumentAssistant() {
   // 文档类型状态
   const [selectedDocType, setSelectedDocType] = useState<DocumentType | null>(null);
   
-  // 文档上下文信息
+  // 文档上下文信息 - userInput 初始值为示例
   const [documentContext, setDocumentContext] = useState<DocumentContext>({
     subject: '',
     recipients: '',
     keywords: [],
     specialRequirements: '',
     referenceFiles: [],
-    background: ''
+    background: '',
+    userInput: EXAMPLE_PLACEHOLDER // <--- 直接设置初始值
   });
   
   // 模型配置
@@ -96,9 +121,9 @@ export default function GovDocumentAssistant() {
         if (config.defaultModel) {
           setModelConfig(prev => ({
             ...prev,
-            model: config.defaultModel
+            // model: config.defaultModel // <--- 注释掉或移除此行，不再覆盖模型
           }));
-          console.log('从服务器获取的默认模型:', config.defaultModel);
+          console.log('从服务器获取的默认模型（但未覆盖客户端设置）:', config.defaultModel);
         }
       } catch (err) {
         console.error('获取服务器配置失败:', err);
@@ -116,13 +141,121 @@ export default function GovDocumentAssistant() {
       return;
     }
     
+    if (!documentContext.userInput.trim()) {
+      setError('请输入您的想法和要求');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     
     try {
-      // 构建提示词
-      const prompt = formatPrompt(selectedDocType, documentContext);
-      
+      // --- 新增：读取第一个参考文件内容 ---
+      let referenceContent = '';
+      if (documentContext.referenceFiles && documentContext.referenceFiles.length > 0) {
+        const file = documentContext.referenceFiles[0];
+        
+        try {
+          if (file.type === 'text/plain' || file.name.endsWith('.md')) {
+            referenceContent = await file.text();
+            console.log('成功读取文本文件:', file.name);
+          } else if (file.name.endsWith('.docx')) {
+            console.log('尝试读取 DOCX 文件:', file.name);
+            const arrayBuffer = await file.arrayBuffer();
+            const result = await mammoth.extractRawText({ arrayBuffer });
+            referenceContent = result.value;
+            console.log('成功读取 DOCX 文件内容。');
+          } else if (file.type === 'application/pdf') {
+            console.log('尝试读取 PDF 文件:', file.name);
+            
+            if (!pdfjsLibInstance) {
+              console.error('PDFJS 库尚未加载');
+              throw new Error('PDF 解析库加载失败，请稍后重试。');
+            }
+
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLibInstance.getDocument({ data: arrayBuffer }).promise;
+            const numPages = pdf.numPages;
+            let pdfText = '';
+            for (let i = 1; i <= numPages; i++) {
+              const page = await pdf.getPage(i);
+              const textContent = await page.getTextContent();
+              pdfText += textContent.items.map((item): string => {
+                if ('str' in item) {
+                  return (item as TextItem).str;
+                } 
+                return '';
+              }).join(' ') + '\n';
+            }
+            referenceContent = pdfText;
+            console.log(`成功读取 PDF 文件共 ${numPages} 页内容。`);
+          } else {
+            console.log('不支持的参考文件类型:', file.type, file.name);
+            // 可以在这里添加错误提示给用户
+            setError(`不支持的文件类型: ${file.name}。请上传 .txt, .md, .docx 或 .pdf 文件。`);
+            setIsLoading(false); // 停止加载
+            return; // 中断执行
+          }
+        } catch (readError) {
+          console.error(`读取参考文件 ${file.name} 失败:`, readError);
+          setError(`读取参考文件 ${file.name} 失败，请检查文件是否损坏或格式是否正确。`);
+          setIsLoading(false); // 停止加载
+          return; // 中断执行
+        }
+      }
+      // --- 文件读取结束 ---
+
+      // 构建新的提示词逻辑
+      let finalPrompt = '';
+      const instructionToStartDirectly = `\n\n请直接生成公文内容，不要包含任何开场白或确认语句。`;
+
+      if (referenceContent) {
+        // --- 如果有参考范文 --- 
+        console.log("检测到参考范文，将优先使用范文格式。");
+        finalPrompt = `你是一位资深的公文写作专家。
+请严格参考以下范文的格式、风格和语气，并结合用户提供的具体要求，生成一份【${selectedDocType.name}】类型的公文。
+
+【用户要求】：
+${documentContext.userInput}
+
+【用户背景信息】(用于辅助判断语气、常用语等，仅作参考)：
+${documentContext.background || '未提供'}
+
+【参考范文示例】(请严格以此为准)：
+<example>
+${referenceContent}
+</example>
+${instructionToStartDirectly}`;
+
+      } else {
+        // --- 如果没有参考范文 --- 
+        console.log("未检测到参考范文，将使用预设模板。");
+        // 复用 types.ts 中的部分基础指令和格式要求会更好，但为简化暂不引入
+        // 基础指令 + 用户要求 + 背景 + 模板 + 直接开始指令
+        finalPrompt = `你是一位有30年党政机关文秘工作经验的资深公文写作专家，请根据以下信息生成一份高质量、格式规范的【${selectedDocType.name}】。
+
+【用户要求】：
+${documentContext.userInput}
+
+【用户背景信息】(用于辅助判断语气、常用语等，仅作参考)：
+${documentContext.background || '未提供'}
+
+【公文类型写作要求】(请严格遵循此模板要求进行写作)：
+${selectedDocType.templatePrompt}
+
+【格式排版严格要求】
+1. 严禁使用bulletpoint(•)、星号(*)、破折号(-)等非标准公文符号作为列表标记。
+2. 不得使用简短的点式概要方式呈现内容，应使用完整的段落和句子。
+3. 所有内容必须按照标准公文格式进行排版：一级标题用"一、二、"，二级用"（一）（二）"，三级用"1. 2."，四级用"(1) (2)"。
+4. 正文段落必须首行缩进2个字符，包括带序号的内容。
+${instructionToStartDirectly}`;
+      }
+
+      console.log("构建的 Prompt:", finalPrompt); // 调试：打印最终 prompt
+
+      // ---> 添加日志，确认发送的模型名称 <---
+      console.log("正在使用的模型:", modelConfig.model);
+
       // 实际请求语言模型API
       const response = await fetch('/api/generate-document', {
         method: 'POST',
@@ -130,7 +263,7 @@ export default function GovDocumentAssistant() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          prompt,
+          prompt: finalPrompt, // <--- 使用新的 finalPrompt
           model: modelConfig.model,
           temperature: modelConfig.temperature
         })
@@ -205,18 +338,20 @@ export default function GovDocumentAssistant() {
               />
             </div>
             
-            {/* 上下文信息 */}
+            {/* 上下文信息 - 使用卡片标题样式 */}
             <div className="bg-white shadow-sm rounded-lg p-4 border border-gray-200">
+              {/* 添加 H2 标题 */}
               <h2 className="text-base font-medium mb-3 text-gray-800 flex items-center">
                 <svg className="h-4 w-4 mr-1.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                文档信息
+                文档要求
               </h2>
               
               <DocumentContextForm
                 context={documentContext}
-                onChange={setDocumentContext}
+                onChange={setDocumentContext} // 使用简单的 onChange
+                examplePlaceholder={EXAMPLE_PLACEHOLDER} // 传递常量用于样式比较
               />
             </div>
             
@@ -228,6 +363,9 @@ export default function GovDocumentAssistant() {
                 </svg>
                 参考资料
               </h2>
+              <p className="text-xs text-gray-500 mb-3">
+                上传格式、风格与您期望一致的范文（.txt, .md, .docx, .pdf），可显著提升生成效果。
+              </p>
               
               <FileUploader
                 files={documentContext.referenceFiles}

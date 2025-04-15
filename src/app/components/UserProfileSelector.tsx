@@ -59,7 +59,6 @@ export default function UserProfileSelector({
 
   const handleProfileSelect = (profile: UserProfile) => {
     setEditedBackground(profile.backgroundInfo);
-    onBackgroundChange(profile.backgroundInfo);
   };
 
   const handleSave = async () => {

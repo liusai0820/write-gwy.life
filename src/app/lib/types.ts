@@ -53,6 +53,7 @@ export interface DocumentContext {
   specialRequirements: string;
   referenceFiles: File[];
   background: string;  // 添加背景信息字段
+  userInput: string;   // 新增：合并的用户输入
 }
 
 // 风格偏好设置
